@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+  </head>
+  <body>
+    <canvas id="canvas" width="700" height="300"></canvas>
+
+    <div id="status"></div>
+
+    <br />
+
+    <div id="color" style="width: 80px; height: 80px;"></div>
+
+    <p>
+      Move the mouse over the picture
+    </p>
+
+    <script>
+      // 1. accessible canvas instance
+      var canvas = document.querySelector("#canvas");
+
+      // 2. create method to know the position of the canvas element
+      function getElementPosition(obj) {
+        let curleft = 0,
+          curtop = 0;
+        if (obj.offsetParent) {
+          do {
+            curleft += obj.offsetLeft;
+            curtop += obj.offsetTop;
+          } while ((obj = obj.offsetParent));
+          {
+            return { x: curleft, y: curtop };
+          }
+        }
+        return undefined;
+      }
+
+      //  3. create method to know the location of the mouse
+      // from an user event (mouseover in our case)
+      function getEventLocation(element, event) {
+        let pos = getElementPosition(element);
+
+        return {
+          x: event.pageX - pos.x,
+          y: event.pageY - pos.y
+        };
+      }
+
+      // 4. helper function to convert a RGB color to its HEX representation
+      function rgbToHex(r, g, b) {
+        if (r > 255 || g > 255 || b > 255) {
+          throw "Invalid color component";
+        }
+        return ((r << 16) | (g << 8) | b).toString(16);
+      }
+
+      // 5. function to draw an image from a url/base64
+      function drawImageFromWebUrl(sourceurl) {
+        let img = new Image();
+
+        img.addEventListener("load", function() {
+          // The image can be drawn from any source
+          canvas
+            .getContext("2d")
+            .drawImage(
+              img,
+              0,
+              0,
+              img.width,
+              img.height,
+              0,
+              0,
+              canvas.width,
+              canvas.height
+            );
+        });
+        img.setAttribute("src", sourceurl);
+      }
+
+      drawImageFromWebUrl("./batman.jpg");
+      canvas.addEventListener("mousemove", function(e) {
+        let eventLocation = getEventLocation(this, e);
+        let coord = "x=" + eventLocation.x + ", y=" + eventLocation.y;
+
+        // Get the data of the pixel according to the location
+        // generate by the getEventLocation function
+        let context = this.getContext("2d");
+        let pixelData = context.getImageData(
+          eventLocation.x,
+          eventLocation.y,
+          1,
+          1
+        ).data;
+
+        // if transparency on the image
+        if (
+          pixelData[0] == 0 &&
+          pixelData[1] == 0 &&
+          pixelData[2] == 0 &&
+          pixelData[3] == 0
+        ) {
+          coord += "(Transparent color detected, cannot be converted to HEX)";
+        }
+
+        let hex =
+          "#" +
+          ("000000" + rgbToHex(pixelData[0], pixelData[1], pixelData[2])).slice(
+            -6
+          );
+
+        // Draw the color and coordinates.
+        document.getElementById("status").innerHTML = coord;
+        document.getElementById("color").style.backgroundColor = hex;
+
+      }, false);
+    </script>
+  </body>
+</html>
